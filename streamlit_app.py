@@ -3,10 +3,7 @@ import googlefit_auth as gfit
 import time
 import plotly.graph_objects as go
 
-import streamlit as st
-import googlefit_auth as gfit
-import os
-
+st.set_page_config(page_title="Google Fit Watch Integration", layout="wide")
 st.title("Google Fit Watch Integration")
 
 # Step 1: Upload JSON file
@@ -21,59 +18,33 @@ if uploaded_file is not None:
     st.success("OAuth JSON uploaded successfully!")
 
     # Step 2: Authenticate Google Fit
-    auth_url, flow = gfit.authenticate_google_fit(json_path)
-    st.write("Click below to authenticate Google Fit:")
-    st.markdown(f"[Authenticate Google Fit]({auth_url})")
-
-    # Step 3: Enter the Authorization Code
-    auth_code = st.text_input("Enter the authorization code:")
-
-    if auth_code:
-        credentials_json = gfit.fetch_google_fit_token(auth_code, flow)
-        st.success("Authentication Successful! Fetching Google Fit data...")
-
-        # Step 4: Fetch Google Fit Data
-        fit_data = gfit.fetch_google_fit_data(credentials_json)
-        st.json(fit_data)
-
-
-st.set_page_config(page_title="Google Fit Watch Integration", layout="wide")
-
-# File Upload
-st.title("Google Fit Watch Integration")
-uploaded_file = st.file_uploader("Upload your Google Fit OAuth JSON file", type="json")
-
-if uploaded_file is not None:
-    # Save the uploaded file properly
-    json_path = "client_secret.json"
-    with open(json_path, "wb") as f:
-        f.write(uploaded_file.getbuffer())
-    
-    st.success("File uploaded successfully!")
-
-    # Now authenticate
     try:
-        auth_url, flow = authenticate_google_fit(json_path)  # Pass the correct file path
+        auth_url, flow = gfit.authenticate_google_fit(json_path)  # Pass the correct file path
         st.write("Click the link below to authenticate with Google Fit:")
         st.markdown(f"[Authenticate here]({auth_url})")
+        st.session_state["flow"] = flow
     except Exception as e:
         st.error(f"Authentication failed: {e}")
 
-if "auth_url" in st.session_state:
+# Step 3: Enter Authorization Code
+if "flow" in st.session_state:
     auth_code = st.text_input("Paste the authentication code here:")
     if auth_code:
-        creds_json = gfit.fetch_google_fit_token(auth_code, st.session_state["flow"])
-        st.session_state["credentials"] = creds_json
-        st.success("Authentication successful!")
+        try:
+            creds_json = gfit.fetch_google_fit_token(auth_code, st.session_state["flow"])
+            st.session_state["credentials"] = creds_json
+            st.success("Authentication successful!")
+        except Exception as e:
+            st.error(f"Token exchange failed: {e}")
 
-# Step 2: Fetch & Display Data
+# Step 4: Fetch & Display Data
 if "credentials" in st.session_state:
     if st.button("Fetch Google Fit Data"):
         data = gfit.fetch_google_fit_data(st.session_state["credentials"])
         st.session_state["health_data"] = data
         st.success("Data fetched successfully!")
 
-# Step 3: Real-Time Visualization
+# Step 5: Real-Time Visualization
 if "health_data" in st.session_state:
     st.subheader("📊 Live Health Data from Watch")
     
@@ -81,10 +52,10 @@ if "health_data" in st.session_state:
     col1, col2, col3 = st.columns(3)
 
     with col1:
-        st.metric(label="💓 Heart Rate (BPM)", value=data.get("Heart Rate", "N/A"))
+        st.metric(label="💓 Heart Rate (BPM)", value=st.session_state["health_data"].get("Heart Rate", "N/A"))
     
     with col2:
-        bp_data = data.get("Blood Pressure", "N/A")
+        bp_data = st.session_state["health_data"].get("Blood Pressure", "N/A")
         if isinstance(bp_data, list) and len(bp_data) > 1:
             bp_value = f"{bp_data[0]['fpVal']}/{bp_data[1]['fpVal']} mmHg"
         else:
@@ -92,16 +63,14 @@ if "health_data" in st.session_state:
         st.metric(label="🩸 Blood Pressure", value=bp_value)
 
     with col3:
-        spo2_data = data.get("SpO2 (Oxygen)", "N/A")
+        spo2_data = st.session_state["health_data"].get("SpO2 (Oxygen)", "N/A")
         spo2_value = f"{spo2_data[0]['fpVal']}%" if isinstance(spo2_data, list) else "N/A"
         st.metric(label="🧬 SpO2 (Oxygen Level)", value=spo2_value)
 
     # Live updating section
     st.subheader("📈 Live Trends")
-    
-    # Graphing heart rate over time
     fig = go.Figure()
-    heart_rate_values = [data.get("Heart Rate", 0)]
+    heart_rate_values = [st.session_state["health_data"].get("Heart Rate", 0)]
     
     fig.add_trace(go.Scatter(y=heart_rate_values, mode="lines+markers", name="Heart Rate"))
     
@@ -112,14 +81,14 @@ if "health_data" in st.session_state:
     
     chart_placeholder = st.empty()
 
-    # Live Update Loop
-    while st.button("Start Live Monitoring"):
-        new_data = gfit.fetch_google_fit_data(st.session_state["credentials"])
-        heart_rate_values.append(new_data.get("Heart Rate", 0))
-        if len(heart_rate_values) > 50:
-            heart_rate_values.pop(0)  # Keep last 50 data points
-        
-        fig.data[0].y = heart_rate_values
-        chart_placeholder.plotly_chart(fig, use_container_width=True)
-        time.sleep(5)  # Refresh every 5 seconds
+    if st.button("Start Live Monitoring"):
+        while True:
+            new_data = gfit.fetch_google_fit_data(st.session_state["credentials"])
+            heart_rate_values.append(new_data.get("Heart Rate", 0))
+            if len(heart_rate_values) > 50:
+                heart_rate_values.pop(0)  # Keep last 50 data points
+            
+            fig.data[0].y = heart_rate_values
+            chart_placeholder.plotly_chart(fig, use_container_width=True)
+            time.sleep(5)  # Refresh every 5 seconds
 
