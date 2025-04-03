@@ -56,7 +56,3 @@ def fetch_google_fit_data(credentials_json):
 
     return results
 
-
-
-    data = service.users().dataSources().list(userId="me").execute()
-    return data
