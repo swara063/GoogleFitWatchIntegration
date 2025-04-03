@@ -31,5 +31,32 @@ def fetch_google_fit_data(credentials_json):
     creds = Credentials.from_authorized_user_info(credentials_json)
     service = build("fitness", "v1", credentials=creds)
 
+    # Define the list of required data types
+    data_types = {
+        "Heart Rate": "com.google.heart_rate.bpm",
+        "Blood Pressure": "com.google.blood_pressure",
+        "SpO2 (Oxygen)": "com.google.oxygen_saturation",
+        "Steps": "com.google.step_count.delta",
+        "Calories": "com.google.calories.expended",
+        "Sleep": "com.google.sleep.segment"
+    }
+
+    results = {}
+    for key, data_type in data_types.items():
+        dataset = service.users().dataset().aggregate(
+            userId="me",
+            body={
+                "aggregateBy": [{"dataTypeName": data_type}],
+                "bucketByTime": {"durationMillis": 86400000},  # Last 24 hours
+                "startTimeMillis": "0",
+                "endTimeMillis": "9999999999999"
+            }
+        ).execute()
+        
+        results[key] = dataset.get("bucket", [{}])[0].get("dataset", [{}])[0].get("point", [{}])[0].get("value", [{}])
+    
+    return results
+
+
     data = service.users().dataSources().list(userId="me").execute()
     return data
