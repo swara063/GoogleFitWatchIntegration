@@ -27,12 +27,12 @@ if uploaded_file is not None:
 
 # Step 3: Enter Authorization Code
 if "flow" in st.session_state:
-    auth_code = st.text_input("Paste the authentication code here:")
+    auth_code = st.text_input("Paste the authorization code here:")
     if auth_code:
         try:
             creds_json = gfit.fetch_google_fit_token(auth_code, st.session_state["flow"])
             st.session_state["credentials"] = creds_json
-            st.success("Authentication successful!")
+            st.success("Authorization successful!")
         except Exception as e:
             st.error(f"Token exchange failed: {e}")
 
@@ -85,4 +85,3 @@ if "health_data" in st.session_state:
             fig.data[0].y = heart_rate_values
             chart_placeholder.plotly_chart(fig, use_container_width=True)
             time.sleep(5)
-
