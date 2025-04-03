@@ -91,4 +91,3 @@ if "health_data" in st.session_state:
             fig.data[0].y = heart_rate_values
             chart_placeholder.plotly_chart(fig, use_container_width=True)
             time.sleep(5)  # Refresh every 5 seconds
-
