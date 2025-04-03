@@ -3,6 +3,40 @@ import googlefit_auth as gfit
 import time
 import plotly.graph_objects as go
 
+import streamlit as st
+import googlefit_auth as gfit
+import os
+
+st.title("Google Fit Watch Integration")
+
+# Step 1: Upload JSON file
+uploaded_file = st.file_uploader("Upload your Google Fit OAuth JSON file", type="json")
+
+if uploaded_file is not None:
+    # Save file locally
+    json_path = "client_secret.json"
+    with open(json_path, "wb") as f:
+        f.write(uploaded_file.getbuffer())
+    
+    st.success("OAuth JSON uploaded successfully!")
+
+    # Step 2: Authenticate Google Fit
+    auth_url, flow = gfit.authenticate_google_fit(json_path)
+    st.write("Click below to authenticate Google Fit:")
+    st.markdown(f"[Authenticate Google Fit]({auth_url})")
+
+    # Step 3: Enter the Authorization Code
+    auth_code = st.text_input("Enter the authorization code:")
+
+    if auth_code:
+        credentials_json = gfit.fetch_google_fit_token(auth_code, flow)
+        st.success("Authentication Successful! Fetching Google Fit data...")
+
+        # Step 4: Fetch Google Fit Data
+        fit_data = gfit.fetch_google_fit_data(credentials_json)
+        st.json(fit_data)
+
+
 st.set_page_config(page_title="Google Fit Watch Integration", layout="wide")
 
 # File Upload
