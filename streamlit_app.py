@@ -5,8 +5,6 @@ import plotly.graph_objects as go
 
 st.set_page_config(page_title="Google Fit Watch Integration", layout="wide")
 
-st.title("Google Fit Watch Integration")
-
 # File Upload
 st.title("Google Fit Watch Integration")
 uploaded_file = st.file_uploader("Upload your Google Fit OAuth JSON file", type="json")
