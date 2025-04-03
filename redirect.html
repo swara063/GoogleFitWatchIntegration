@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Authorization Code</title>
+</head>
+<body>
+    <h2>Authorization Successful</h2>
+    <p>Copy the authorization code from the URL and paste it into the Streamlit app.</p>
+    <script>
+        // Extract authorization code from URL
+        const params = new URLSearchParams(window.location.search);
+        const authCode = params.get("code");
+        if (authCode) {
+            document.body.innerHTML += `<p><strong>Authorization Code:</strong> ${authCode}</p>`;
+        } else {
+            document.body.innerHTML += "<p>Error: No authorization code found.</p>";
+        }
+    </script>
+</body>
+</html>
