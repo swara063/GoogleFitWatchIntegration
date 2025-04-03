@@ -10,18 +10,20 @@ st.title("Google Fit Watch Integration")
 uploaded_file = st.file_uploader("Upload your Google Fit OAuth JSON file", type="json")
 
 if uploaded_file is not None:
-    # Save the uploaded file temporarily
-    with open("client_secret.json", "wb") as f:
+    # Save the uploaded file properly
+    json_path = "client_secret.json"
+    with open(json_path, "wb") as f:
         f.write(uploaded_file.getbuffer())
+    
+    st.success("File uploaded successfully!")
 
-
-# Step 1: Authenticate User
-if "credentials" not in st.session_state:
-    if st.button("Authenticate with Google Fit"):
-        auth_url, flow = gfit.authenticate_google_fit()
-        st.session_state["auth_url"] = auth_url
-        st.session_state["flow"] = flow
-        st.write(f"[Click here to authenticate]({auth_url})")
+    # Now authenticate
+    try:
+        auth_url, flow = authenticate_google_fit(json_path)  # Pass the correct file path
+        st.write("Click the link below to authenticate with Google Fit:")
+        st.markdown(f"[Authenticate here]({auth_url})")
+    except Exception as e:
+        st.error(f"Authentication failed: {e}")
 
 if "auth_url" in st.session_state:
     auth_code = st.text_input("Paste the authentication code here:")
