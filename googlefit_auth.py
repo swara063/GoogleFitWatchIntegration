@@ -3,12 +3,13 @@ from google_auth_oauthlib.flow import Flow
 from googleapiclient.discovery import build
 from google.oauth2.credentials import Credentials
 
+# Google Fit Scopes (Modify if needed)
 SCOPES = ["https://www.googleapis.com/auth/fitness.activity.read"]
 
-def authenticate_google_fit(json_path):
+def authenticate_google_fit(client_secrets_file):
     """Step 1: Generate Google Fit Authentication URL"""
     flow = Flow.from_client_secrets_file(
-        json_path,
+        client_secrets_file,
         scopes=SCOPES,
         redirect_uri="https://your-streamlit-app-url"  # Update after deployment
     )
@@ -39,20 +40,17 @@ def fetch_google_fit_data(credentials_json):
 
     results = {}
     for key, data_type in data_types.items():
-        try:
-            dataset = service.users().dataset().aggregate(
-                userId="me",
-                body={
-                    "aggregateBy": [{"dataTypeName": data_type}],
-                    "bucketByTime": {"durationMillis": 86400000},  # Last 24 hours
-                    "startTimeMillis": "0",
-                    "endTimeMillis": "9999999999999"
-                }
-            ).execute()
-
-            results[key] = dataset.get("bucket", [{}])[0].get("dataset", [{}])[0].get("point", [{}])[0].get("value", [{}])
-        except Exception as e:
-            results[key] = f"Error: {e}"
-
+        dataset = service.users().dataset().aggregate(
+            userId="me",
+            body={
+                "aggregateBy": [{"dataTypeName": data_type}],
+                "bucketByTime": {"durationMillis": 86400000},  # Last 24 hours
+                "startTimeMillis": "0",
+                "endTimeMillis": "9999999999999"
+            }
+        ).execute()
+        
+        results[key] = dataset.get("bucket", [{}])[0].get("dataset", [{}])[0].get("point", [{}])[0].get("value", [{}])
+    
     return results
 
