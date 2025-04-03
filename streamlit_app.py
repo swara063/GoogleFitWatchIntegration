@@ -7,6 +7,16 @@ st.set_page_config(page_title="Google Fit Watch Integration", layout="wide")
 
 st.title("Google Fit Watch Integration")
 
+# File Upload
+st.title("Google Fit Watch Integration")
+uploaded_file = st.file_uploader("Upload your Google Fit OAuth JSON file", type="json")
+
+if uploaded_file is not None:
+    # Save the uploaded file temporarily
+    with open("client_secret.json", "wb") as f:
+        f.write(uploaded_file.getbuffer())
+
+
 # Step 1: Authenticate User
 if "credentials" not in st.session_state:
     if st.button("Authenticate with Google Fit"):
