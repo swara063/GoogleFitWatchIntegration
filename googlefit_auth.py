@@ -13,7 +13,7 @@ def authenticate_google_fit(client_secrets_file):
         flow = Flow.from_client_secrets_file(
             client_secrets_file,
             scopes=SCOPES,
-            redirect_uri="http://localhost:8501"  # Make sure this matches Google Cloud Console
+            redirect_uri="https://smart-watch-integration.streamlit.app/"  # Make sure this matches Google Cloud Console
         )
         auth_url, _ = flow.authorization_url(prompt='consent', access_type="offline")
         return auth_url, flow
