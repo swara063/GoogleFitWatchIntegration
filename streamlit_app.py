@@ -10,7 +10,6 @@ st.title("Google Fit Watch Integration")
 uploaded_file = st.file_uploader("Upload your Google Fit OAuth JSON file", type="json")
 
 if uploaded_file is not None:
-    # Save file locally
     json_path = "client_secret.json"
     with open(json_path, "wb") as f:
         f.write(uploaded_file.getbuffer())
@@ -19,7 +18,7 @@ if uploaded_file is not None:
 
     # Step 2: Authenticate Google Fit
     try:
-        auth_url, flow = gfit.authenticate_google_fit(json_path)  # Pass the correct file path
+        auth_url, flow = gfit.authenticate_google_fit(json_path)
         st.write("Click the link below to authenticate with Google Fit:")
         st.markdown(f"[Authenticate here]({auth_url})")
         st.session_state["flow"] = flow
@@ -48,7 +47,6 @@ if "credentials" in st.session_state:
 if "health_data" in st.session_state:
     st.subheader("📊 Live Health Data from Watch")
     
-    # Layout with 3 columns
     col1, col2, col3 = st.columns(3)
 
     with col1:
@@ -56,18 +54,14 @@ if "health_data" in st.session_state:
     
     with col2:
         bp_data = st.session_state["health_data"].get("Blood Pressure", "N/A")
-        if isinstance(bp_data, list) and len(bp_data) > 1:
-            bp_value = f"{bp_data[0]['fpVal']}/{bp_data[1]['fpVal']} mmHg"
-        else:
-            bp_value = "N/A"
+        bp_value = f"{bp_data[0]['fpVal']}/{bp_data[1]['fpVal']} mmHg" if isinstance(bp_data, list) and len(bp_data) > 1 else "N/A"
         st.metric(label="🩸 Blood Pressure", value=bp_value)
-
+    
     with col3:
         spo2_data = st.session_state["health_data"].get("SpO2 (Oxygen)", "N/A")
         spo2_value = f"{spo2_data[0]['fpVal']}%" if isinstance(spo2_data, list) else "N/A"
         st.metric(label="🧬 SpO2 (Oxygen Level)", value=spo2_value)
 
-    # Live updating section
     st.subheader("📈 Live Trends")
     fig = go.Figure()
     heart_rate_values = [st.session_state["health_data"].get("Heart Rate", 0)]
@@ -86,8 +80,9 @@ if "health_data" in st.session_state:
             new_data = gfit.fetch_google_fit_data(st.session_state["credentials"])
             heart_rate_values.append(new_data.get("Heart Rate", 0))
             if len(heart_rate_values) > 50:
-                heart_rate_values.pop(0)  # Keep last 50 data points
+                heart_rate_values.pop(0)
             
             fig.data[0].y = heart_rate_values
             chart_placeholder.plotly_chart(fig, use_container_width=True)
-            time.sleep(5)  # Refresh every 5 seconds
+            time.sleep(5)
+
