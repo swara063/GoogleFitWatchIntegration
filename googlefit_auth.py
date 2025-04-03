@@ -3,16 +3,12 @@ from google_auth_oauthlib.flow import Flow
 from googleapiclient.discovery import build
 from google.oauth2.credentials import Credentials
 
-# Path to Google OAuth credentials file
-CLIENT_SECRETS_FILE = "client_secrets.json"
-
-# Google Fit Scopes (Modify if needed)
 SCOPES = ["https://www.googleapis.com/auth/fitness.activity.read"]
 
-def authenticate_google_fit():
+def authenticate_google_fit(json_path):
     """Step 1: Generate Google Fit Authentication URL"""
     flow = Flow.from_client_secrets_file(
-        CLIENT_SECRETS_FILE,
+        json_path,
         scopes=SCOPES,
         redirect_uri="https://your-streamlit-app-url"  # Update after deployment
     )
@@ -43,19 +39,23 @@ def fetch_google_fit_data(credentials_json):
 
     results = {}
     for key, data_type in data_types.items():
-        dataset = service.users().dataset().aggregate(
-            userId="me",
-            body={
-                "aggregateBy": [{"dataTypeName": data_type}],
-                "bucketByTime": {"durationMillis": 86400000},  # Last 24 hours
-                "startTimeMillis": "0",
-                "endTimeMillis": "9999999999999"
-            }
-        ).execute()
-        
-        results[key] = dataset.get("bucket", [{}])[0].get("dataset", [{}])[0].get("point", [{}])[0].get("value", [{}])
-    
+        try:
+            dataset = service.users().dataset().aggregate(
+                userId="me",
+                body={
+                    "aggregateBy": [{"dataTypeName": data_type}],
+                    "bucketByTime": {"durationMillis": 86400000},  # Last 24 hours
+                    "startTimeMillis": "0",
+                    "endTimeMillis": "9999999999999"
+                }
+            ).execute()
+
+            results[key] = dataset.get("bucket", [{}])[0].get("dataset", [{}])[0].get("point", [{}])[0].get("value", [{}])
+        except Exception as e:
+            results[key] = f"Error: {e}"
+
     return results
+
 
 
     data = service.users().dataSources().list(userId="me").execute()
